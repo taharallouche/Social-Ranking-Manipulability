@@ -10,6 +10,8 @@ We investigate the issue of manipulability for social ranking rules, where the g
 **Repository:**\
 This repository contains the julia code used in the simulations. It uses the CBC optimizer for linear optimization.
 
+A related R package for usual social ranking operations can be found on [CRAN](https://cran.r-project.org/web/packages/socialranking/index.html).
+
 
 **Structure:**\
 The repository is divided into 3 subfolders: one for each social ranking rule.
