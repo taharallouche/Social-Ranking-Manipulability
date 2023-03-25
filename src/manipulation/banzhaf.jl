@@ -1,53 +1,12 @@
-# This file contains a method to manipulate the Banzhaff solution if possible
 include("generation.jl")
+include("helpers.jl")
 using Cbc
 using JuMP
 
-"""
-PR_to_Order:
--PR:Power Relation: List of lists of lists: list of indifference classes of coalitions
-Output:
--Coalitions:List of ordered coalitions
--Classes   :List of the class to which belongs each coalition (in the same order as Coalitions)
-"""
-
-function PR_to_Order(PR::Array{Array{Array{Any,1},1},1})
-	Classes=[]
-	Coalitions=Array{Any,1}[]
-	p=1
-	for C in PR
-		for S in C
-			push!(Classes,p)
-			push!(Coalitions,S)
-		end
-		p+=1
-	end
-	return Coalitions,Classes
-end
-
-"""
-Marginal_Cont:
--Coalitions:List of coalitions
--m:Matrix of the PR
--i:Player
-Output:
--Sum of the marginal contributions of i
-"""
-function find_Coalition(Coalitions::Array{Array{Any,1},1},Coalition::Array{Any,1})
-	exist=false
-	for i in 1:size(Coalitions,1)
-		if (Coalitions[i]==Coalition)
-			exist=true
-			return i
-		end
-	end
-	if (exist=false)
-		return -1
-	end
-end
 
 
-function Marginal_Cont(Coalitions::Array{Array{Any,1},1},m::Array{Int64, 2},i::Int64)
+
+function MarginalContribution(Coalitions::Array{Array{Any,1},1},m::Array{Int64, 2},i::Int64)
 	s_i=0
 	Pairs=[]
 	for k in 1:size(Coalitions,1)
@@ -71,11 +30,8 @@ Manipulate:
 -i :The manipulator
 -A :The set of candidates
 """
-
-
-function Manipulate(PR::Array{Array{Array{Any,1},1},1},i::Int64,A::Array{Int64,1})
-	Coalitions=PR_to_Order(PR)[1]
-	Classes=PR_to_Order(PR)[2]
+function ManipulateBanzhaf(PR::Array{Array{Array{Any,1},1},1},i::Int64,A::Array{Int64,1})
+	Coalitions, Classes=PR_to_Order(PR)
 	n=size(Coalitions,1)
 	a=size(A,1)
 	
@@ -125,7 +81,7 @@ function Manipulate(PR::Array{Array{Array{Any,1},1},1},i::Int64,A::Array{Int64,1
 	
 	#Marginal contributions
 	for j in 1:a
-		Pairs=Marginal_Cont(Coalitions,m,A[j])[2] #Pairs of coalitions with and without j
+		Pairs=MarginalContribution(Coalitions,m,A[j])[2] #Pairs of coalitions with and without j
 		@constraint(model,sum(manip[P[1],P[2]]-manip[P[2],P[1]] for P in Pairs)==s[j])
 	end
 	
@@ -160,23 +116,23 @@ function Manipulate(PR::Array{Array{Array{Any,1},1},1},i::Int64,A::Array{Int64,1
 	victims=0
 	potential_victims=0
 	for j in 1:a
-		if ((A[j]!=i) && (Marginal_Cont(Coalitions,m,i)[1]==Marginal_Cont(Coalitions,m,A[j])[1])) || ((A[j]!=i) &&  (Marginal_Cont(Coalitions,m,i)[1]<Marginal_Cont(Coalitions,m,A[j])[1]))
+		if ((A[j]!=i) && (MarginalContribution(Coalitions,m,i)[1]==MarginalContribution(Coalitions,m,A[j])[1])) || ((A[j]!=i) &&  (MarginalContribution(Coalitions,m,i)[1]<MarginalContribution(Coalitions,m,A[j])[1]))
 			potential_victims+=1
 		end
 	end
 	if feasible
-		if (JuMP.objective_value(model)>sum((Marginal_Cont(Coalitions,m,i)[1]>Marginal_Cont(Coalitions,m,j)[1])-(Marginal_Cont(Coalitions,m,i)[1]<Marginal_Cont(Coalitions,m,j)[1]) for j in 1:a))
+		if (JuMP.objective_value(model)>sum((MarginalContribution(Coalitions,m,i)[1]>MarginalContribution(Coalitions,m,j)[1])-(MarginalContribution(Coalitions,m,i)[1]<MarginalContribution(Coalitions,m,j)[1]) for j in 1:a))
             manipulable=true
 		end
 		for j in 1:a
-			if ((A[j]!=i) && (JuMP.value(s[j])<JuMP.value(s[i])) && (Marginal_Cont(Coalitions,m,i)[1]==Marginal_Cont(Coalitions,m,A[j])[1])) || ((A[j]!=i) && (JuMP.value(s[j])<=JuMP.value(s[i])) && (Marginal_Cont(Coalitions,m,i)[1]<Marginal_Cont(Coalitions,m,A[j])[1]))
+			if ((A[j]!=i) && (JuMP.value(s[j])<JuMP.value(s[i])) && (MarginalContribution(Coalitions,m,i)[1]==MarginalContribution(Coalitions,m,A[j])[1])) || ((A[j]!=i) && (JuMP.value(s[j])<=JuMP.value(s[i])) && (MarginalContribution(Coalitions,m,i)[1]<MarginalContribution(Coalitions,m,A[j])[1]))
 				victims+=1
 				println("Manipulable for: ",i," against ",A[j])
 			end
 		end
 		NonInitialementPremier=false
 		for j in 1:a
-			if (Marginal_Cont(Coalitions,m,i)[1]<Marginal_Cont(Coalitions,m,A[j])[1])
+			if (MarginalContribution(Coalitions,m,i)[1]<MarginalContribution(Coalitions,m,A[j])[1])
 				NonInitialementPremier=true
 			end
 		end

@@ -1,94 +1,8 @@
-# This file contains a method to manipulate the Banzhaff solution if possible
 include("generation.jl")
+include("helpers.jl")
 using Cbc
 using JuMP
 
-"""
-PR_to_Order:
--PR:Power Relation: List of lists of lists: list of indifference classes of coalitions
-Output:
--Coalitions:List of ordered coalitions
--Classes   :List of the class to which belongs each coalition (in the same order as Coalitions)
-"""
-
-function PR_to_Order(PR::Array{Array{Array{Any,1},1},1})
-	Classes=[]
-	Coalitions=Array{Any,1}[]
-	p=1
-	for C in PR
-		for S in C
-			push!(Classes,p)
-			push!(Coalitions,S)
-		end
-		p+=1
-	end
-	return Coalitions,Classes
-end
-
-"""
-Marginal_Cont:
--Coalitions:List of coalitions
--m:Matrix of the PR
--i:Player
-Output:
--Sum of the marginal contributions of i
-"""
-function find_Coalition(Coalitions::Array{Array{Any,1},1},Coalition::Array{Any,1})
-	exist=false
-	for i in 1:size(Coalitions,1)
-		if (Coalitions[i]==Coalition)
-			exist=true
-			return i
-		end
-	end
-	if (exist=false)
-		return -1
-	end
-end
-
-
-function Marginal_Cont(Coalitions::Array{Array{Any,1},1},m::Array{Int64, 2},i::Int64)
-	s_i=0
-	Pairs=[]
-	for k in 1:size(Coalitions,1)
-		if (i in Coalitions[k])
-			S_i=filter(x->x!=i,Coalitions[k])
-			l=find_Coalition(Coalitions,S_i)
-			if (l!=-1)
-				push!(Pairs,(k,l))
-				s_i+=m[k,l]-m[l,k]
-			end
-		end
-	end
-	return s_i,Pairs
-end
-
-"""
-CP-Majority:
--i,j:Players to compare.
--d_ij: Number of coalitions preferring (not strictly) i to j.
--d_ji: Number of coalitions preferring j to i.
--Pairs: List of positions of the compared Sui and Suj coalitions.
-"""
-function CP_Maj(Coalitions::Array{Array{Any,1},1},m::Array{Int64, 2},i::Int64,j::Int64)
-	d_ij=0
-	d_ji=0
-	Pairs=[]
-	for k in 1:size(Coalitions,1)
-		if !((i in Coalitions[k]) || (j in Coalitions[k])) 
-			S_i=sort(vcat(Coalitions[k],i))
-			S_j=sort(vcat(Coalitions[k],j))
-			li=find_Coalition(Coalitions,S_i)
-			lj=find_Coalition(Coalitions,S_j)
-			if (li!=-1) & (lj!=-1)
-				push!(Pairs,(li,lj))
-				d_ij+=m[li,lj]
-				d_ji+=m[lj,li]
-			end
-		end
-	end
-	return d_ij,d_ji,Pairs
-end
 
 """
 Copeland:
@@ -114,7 +28,7 @@ Manipulate:
 """
 
 
-function Manipulate(PR::Array{Array{Array{Any,1},1},1},i::Int64,A::Array{Int64,1})
+function ManipulateCopeland(PR::Array{Array{Array{Any,1},1},1},i::Int64,A::Array{Int64,1})
 	Coalitions=PR_to_Order(PR)[1]
 	Classes=PR_to_Order(PR)[2]
 	n=size(Coalitions,1)

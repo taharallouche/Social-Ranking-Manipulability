@@ -14,23 +14,19 @@ A related R package for usual social ranking operations can be found on [CRAN](h
 
 
 **Structure:**\
-The repository is divided into 3 subfolders: one for each social ranking rule.
-
-Each subfolder contains:
-
 - source folder: contains the following scripts:
-    - `generation.jl`: For generating random Power Relations
-	- `io.jl`: Tools for saving and loading Power Relations from files
-	- `manip.jl`: Contain the implementation of the PL and other useful functions
-	- `testStat.jl`: This is where tests run through whole datasets to get some statistics.
-- data folder: This folder contains the instances generated with the function GenerateDataSet().
+    - `generation.jl`: For generating random Power Relations.
+	- `helpers.jl`: Contains some useful functions to process power relations.
+	- `banzhaf.jl`: Contains the linear optimization program to manipulate Banzhaf social rankings.
+	- `copeland.jl`: Contains the linear optimization program to manipulate Copeland social rankings.
+	- `kramer_simpson.jl`: Contains the linear optimization program to manipulate Kramer-Simpson social rankings.
+	- `experiments.jl`: This is where tests run through whole datasets to get some statistics.
 
 
 **Code:**\
 Here's how to run simulations for each rule:
 1. Run julia on terminal: `$ julia`
-2. Include the `testStat.jl` script: `include("testStat.jl")`.
-3. Call the `GenerateDataSet` function specifying the number of agents and the number of simulations to run as argumetns.
-4. Execute the function: `SolveDataSet()`.
+2. Include the `experiments.jl` script: `include("experiments.jl")`.
+3. Execute the function: `SolveDataSet()`, passing the number of agents, the number of samples, and choose the social ranking method.
 5. The final results will be displayed at the end of the compilation.
 
