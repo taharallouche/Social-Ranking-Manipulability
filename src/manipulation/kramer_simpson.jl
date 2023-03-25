@@ -1,109 +1,9 @@
-# This file contains a method to manipulate the Banzhaff solution if possible
+include("helpers.jl")
 include("generation.jl")
 using Cbc
 using JuMP
 
-"""
-PR_to_Order:
--PR:Power Relation: List of lists of lists: list of indifference classes of coalitions
-Output:
--Coalitions:List of ordered coalitions
--Classes   :List of the class to which belongs each coalition (in the same order as Coalitions)
-"""
 
-function PR_to_Order(PR::Array{Array{Array{Any,1},1},1})
-	Classes=[]
-	Coalitions=Array{Any,1}[]
-	p=1
-	for C in PR
-		for S in C
-			push!(Classes,p)
-			push!(Coalitions,S)
-		end
-		p+=1
-	end
-	return Coalitions,Classes
-end
-
-"""
-Marginal_Cont:
--Coalitions:List of coalitions
--m:Matrix of the PR
--i:Player
-Output:
--Sum of the marginal contributions of i
-"""
-function find_Coalition(Coalitions::Array{Array{Any,1},1},Coalition::Array{Any,1})
-	exist=false
-	for i in 1:size(Coalitions,1)
-		if (Coalitions[i]==Coalition)
-			exist=true
-			return i
-		end
-	end
-	if (exist=false)
-		return -1
-	end
-end
-
-
-function Marginal_Cont(Coalitions::Array{Array{Any,1},1},m::Array{Int64, 2},i::Int64)
-	s_i=0
-	Pairs=[]
-	for k in 1:size(Coalitions,1)
-		if (i in Coalitions[k])
-			S_i=filter(x->x!=i,Coalitions[k])
-			l=find_Coalition(Coalitions,S_i)
-			if (l!=-1)
-				push!(Pairs,(k,l))
-				s_i+=m[k,l]-m[l,k]
-			end
-		end
-	end
-	return s_i,Pairs
-end
-
-"""
-CP-Majority:
--i,j:Players to compare.
--d_ij: Number of coalitions preferring (not strictly) i to j.
--d_ji: Number of coalitions preferring j to i.
--Pairs: List of positions of the compared Sui and Suj coalitions.
-"""
-function CP_Maj(Coalitions::Array{Array{Any,1},1},m::Array{Int64, 2},i::Int64,j::Int64)
-	d_ij=0
-	d_ji=0
-	Pairs=[]
-	for k in 1:size(Coalitions,1)
-		if !((i in Coalitions[k]) || (j in Coalitions[k])) 
-			S_i=sort(vcat(Coalitions[k],i))
-			S_j=sort(vcat(Coalitions[k],j))
-			li=find_Coalition(Coalitions,S_i)
-			lj=find_Coalition(Coalitions,S_j)
-			if (li!=-1) & (lj!=-1)
-				push!(Pairs,(li,lj))
-				d_ij+=m[li,lj]
-				d_ji+=m[lj,li]
-			end
-		end
-	end
-	return d_ij,d_ji,Pairs
-end
-
-"""
-Copeland:
--i:Player
--D:matrix of CP-Majority (Dij=dij)
--Copeland: Copeland score of player i
-"""
-function CopelandScore(i::Int64,D::Array{Int64, 2})
-	Copeland=0
-	a=size(D,1)
-	for j in 1:a
-		Copeland+=(D[i,j]>D[j,i])-(D[j,i]>D[i,j])
-	end
-	return Copeland
-end
 """
 Compute the Kramer Simpson Score:
 Inputs:
@@ -112,8 +12,7 @@ Inputs:
 Output:
 -The Kramer Simposon score of i
 """
-
-function Kram_Simp_Score(i::Int64,D::Array{Int64,2})
+function KramerSimpsonScore(i::Int64,D::Array{Int64,2})
 	a=size(D,1)
 	Score=maximum(filter(x->x<16,D[:,i])) ### Attention!!!! x<M, M=2^(N-1)
 	return Score 
@@ -126,7 +25,6 @@ Manipulate3: Manipulate in case N=3
 -i :The manipulator
 -A :The set of candidates
 """
-
 function Manipulate3(PR::Array{Array{Array{Any,1},1},1},i::Int64,A::Array{Int64,1})
 	Coalitions=PR_to_Order(PR)[1]
 	Classes=PR_to_Order(PR)[2]
@@ -244,7 +142,7 @@ function Manipulate3(PR::Array{Array{Array{Any,1},1},1},i::Int64,A::Array{Int64,
 			D_initial[k,j]=CP_Maj(Coalitions,m,j,k)[2]
 		end
 	end
-	Kramer_initial=[Kram_Simp_Score(j,D_initial) for j in 1:a]
+	Kramer_initial=[KramerSimpsonScore(j,D_initial) for j in 1:a]
 	
 	#Individual relation
 	for j in 1:a
@@ -531,7 +429,7 @@ function Manipulate4(PR::Array{Array{Array{Any,1},1},1},i::Int64,A::Array{Int64,
 			D_initial[k,j]=CP_Maj(Coalitions,m,j,k)[2]
 		end
 	end
-	Kramer_initial=[Kram_Simp_Score(j,D_initial) for j in 1:a]
+	Kramer_initial=[KramerSimpsonScore(j,D_initial) for j in 1:a]
 	
 	#Individual relation
 	for j in 1:a
@@ -891,7 +789,7 @@ function Manipulate5(PR::Array{Array{Array{Any,1},1},1},i::Int64,A::Array{Int64,
 			D_initial[k,j]=CP_Maj(Coalitions,m,j,k)[2]
 		end
 	end
-	Kramer_initial=[Kram_Simp_Score(j,D_initial) for j in 1:a]
+	Kramer_initial=[KramerSimpsonScore(j,D_initial) for j in 1:a]
 
 	#Individual relation
 	for j in 1:a

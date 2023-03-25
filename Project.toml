@@ -1,0 +1,9 @@
+[deps]
+Cbc = "9961bab8-2fa3-5c5a-9d89-47fab24efd76"
+Combinatorics = "861a8166-3701-5b0c-9a16-15d98fcdc6aa"
+GR = "28b8d3ca-fb5f-59d9-8090-bfdbd6d07a71"
+JLD = "4138dd39-2aa7-5051-a626-17a0bb65d9c8"
+JuMP = "4076af6c-e467-56ae-b986-b466b2749572"
+Pkg = "44cfe95a-1eb2-52ea-b672-e2afdf69b78f"
+Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
+RandomNumbers = "e6cf234a-135c-5ec9-84dd-332b85af5143"
